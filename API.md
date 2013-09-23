@@ -20,7 +20,9 @@
 
     {
         "list_id": 2803027034499563436,
-        "items": []
+        "items": [],
+        "created_at": "2013-09-23T14:07:20.758Z",
+        "updated_at": "2013-09-23T14:07:20.758Z"
     }
 
 
@@ -38,14 +40,20 @@
             {
                 "item_id": 4823141349097802214,
                 "text": "Buy macaroni",
-                "done": true
+                "done": true,
+                "created_at": "2013-09-23T16:37:22.348Z",
+                "updated_at": "2013-09-23T16:45:12.126Z",
             },
             {
                 "item_id": 7482473680396593506,
                 "text": "Buy cheese",
                 "done": false
+                "created_at": "2013-09-23T16:38:15.749Z",
+                "updated_at": "2013-09-23T16:38:15.749Z",
             }
-        ]
+        ],
+        "created_at": "2013-09-23T14:07:20.758Z",
+        "updated_at": "2013-09-23T16:45:12.126Z"
     }
 
 
@@ -65,7 +73,7 @@
     POST /list/:list_id/items/:item_id
 
     {
-        "text": "Make macaroni & cheese"
+        "text": "Make macaroni & cheese",
     }
 
 ### Response
@@ -76,7 +84,9 @@
     {
         "item_id": 6505334617479285140,
         "text": "Make macaroni & cheese",
-        "done": false
+        "done": false,
+        "created_at": "2013-09-23T16:40:00.001Z",
+        "updated_at": "2013-09-23T16:40:00.001Z"
     }
 
 
@@ -98,7 +108,9 @@ All of the fields are optional.
     {
         "item_id": 7482473680396593506,
         "text": "Buy more cheese",
-        "done": true
+        "done": true,
+        "created_at": "2013-09-23T16:38:15.749Z",
+        "updated_at": "2013-09-23T16:41:01.304Z",        
     }
 
 
