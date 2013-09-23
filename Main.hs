@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 
@@ -9,9 +8,6 @@ import Control.Monad.IO.Class
 import Control.Concurrent.STM
 import Data.Aeson (ToJSON, (.=))
 import qualified Data.Aeson as A
-import qualified Data.Aeson.Generic  -- for aesonQQ
-import qualified Data.Aeson.Types    -- for aesonQQ
-import Data.Aeson.QQ (aesonQQ)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
@@ -20,7 +16,6 @@ import qualified Data.IntMap.Strict as IntMap
 import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
-import qualified Data.Text  -- for aesonQQ
 import Data.Time
 import Data.Word
 import GHC.Conc.Sync (unsafeIOToSTM)

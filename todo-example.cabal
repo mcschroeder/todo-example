@@ -19,7 +19,6 @@ executable items
   main-is:             Main.hs
   build-depends:       base >=4.6 && <4.7
                      , aeson == 0.6.*
-                     , aeson-qq ==0.4.*
                      , bytestring ==0.10.*
                      , containers ==0.5.*
                      , http-types ==0.8.*
