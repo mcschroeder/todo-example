@@ -26,6 +26,7 @@ executable items
                      , random ==1.0.*
                      , stm ==2.4.*
                      , text ==0.11.*
+                     , time ==1.4.*
                      , transformers ==0.3.*
                      , welshy ==0.1.*
   default-language:    Haskell2010
