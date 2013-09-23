@@ -79,7 +79,7 @@ main = do
     welshy 3000 $ do
 
         post "/lists" $ do
-            listId <- liftIO $ atomically $ do
+            list <- liftIO $ atomically $ do
                 listId <- unsafeIOToSTM randomIO
                 lists <- readTVar dbLists
                 check $ IntMap.notMember listId lists
@@ -90,9 +90,9 @@ main = do
                                 , .. }
                 listVar <- newTVar list
                 modifyTVar' dbLists $ IntMap.insert listId listVar
-                return listId
-            header hLocation $ listLocation listId
-            json [aesonQQ| { list_id: <|listId|> } |]
+                return list
+            header hLocation $ listLocation (listId list)
+            json list
 
         get "/lists/:list_id" $ do
             listId <- capture "list_id"
