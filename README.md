@@ -1,9 +1,10 @@
 # Setup
 
-As long as Welshy is not on Hackage:
+As long as Welshy and TX are not on Hackage:
 
 	cabal sandbox init
 	cabal sandbox add-source ../welshy
+    cabal sandbox add-source ../tx
 	cabal install --only-dependencies
 
 (This is going to take a while...)
