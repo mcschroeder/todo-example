@@ -5,7 +5,6 @@
 module Main where
 
 import Control.Monad.IO.Class
-import Control.Exception
 import Data.Aeson (ToJSON, (.=))
 import qualified Data.Aeson as A
 import Data.ByteString (ByteString)
@@ -20,12 +19,6 @@ import Database
 
 ------------------------------------------------------------------------------
 
-liftTX :: (Exception e, MonadIO m) => Database d -> TX d a -> (e -> m a) -> m a
-liftTX d tx h = either h return =<< (liftIO $ try $ persistently d tx)
-
-liftTX_ :: MonadIO m => Database d -> TX d a -> m a
-liftTX_ d tx = liftIO $ persistently d tx
-
 main :: IO ()
 main = do
     db <- openDatabase "todo.log" =<< newDB
@@ -33,29 +26,29 @@ main = do
     welshy 3000 $ do
 
         post "/lists" $ do
-            list <- liftTX_ db createList
+            list <- liftIO $ persistently db createList
             header hLocation $ listLocation (listId list)
             json list
 
         get "/lists/:list_id" $ do
             listId <- capture "list_id"
-            list <- liftTX db (getList listId)
-                  $ \case
+            list <- persistently db (getList listId)
+                    `catchIO` \case
                         ListNotFound _ -> halt $ status notFound404
             json list
 
         delete "/lists/:list_id" $ do
             listId <- capture "list_id"
-            liftTX db (deleteList listId)
-                $ \case
+            persistently db (deleteList listId)
+                `catchIO` \case
                         ListNotFound _ -> halt $ status notFound404
             status noContent204
 
         post "/lists/:list_id/items" $ do
             listId <- capture "list_id"
             itemText <- jsonParam "text"
-            item <- liftTX db (createItem itemText listId)
-                  $ \case
+            item <- persistently db (createItem itemText listId)
+                    `catchIO` \case
                         ListNotFound _ -> halt $ status notFound404
             header hLocation $ itemLocation listId (itemId item)
             json item
@@ -65,8 +58,9 @@ main = do
             itemId <- capture "item_id"
             itemText' <- maybeJsonParam "text"
             itemDone' <- maybeJsonParam "done"
-            item' <- liftTX db (updateItem itemText' itemDone' itemId listId)
-                   $ \case
+            item' <- persistently db
+                        (updateItem itemText' itemDone' itemId listId)
+                     `catchIO` \case
                         ListNotFound _   -> halt $ status notFound404
                         ItemNotFound _ _ -> halt $ status notFound404
             json item'
@@ -74,8 +68,8 @@ main = do
         delete "/lists/:list_id/items/:item_id" $ do
             listId <- capture "list_id"
             itemId <- capture "item_id"
-            liftTX db (deleteItem itemId listId)
-                $ \case
+            persistently db (deleteItem itemId listId)
+                `catchIO` \case
                         ListNotFound _   -> halt $ status notFound404
                         ItemNotFound _ _ -> halt $ status notFound404
             status noContent204
