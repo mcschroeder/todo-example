@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -19,22 +20,23 @@ import Data.Text (Text)
 import Data.Typeable
 import Data.SafeCopy
 import Data.Serialize
+import Data.Word
 import System.Random
 import TX
 
 ------------------------------------------------------------------------------
 
-type ListId = Int
+newtype ID a = ID { unID :: Word64 }
+    deriving (Bounded, Enum, Eq, Integral, Num, Ord, Real, Show, Random)
 
+type ListId = ID List
 data List = List { listId :: ListId
                  , listItems :: IntMap Item
                  , listCreatedAt :: UTCTime
                  , listUpdatedAt :: UTCTime
                  }
 
-
-type ItemId = Int
-
+type ItemId = ID Item
 data Item = Item { itemId :: ItemId
                  , itemText :: Text
                  , itemDone :: Bool
@@ -74,11 +76,7 @@ instance Persistable DB where
 
 createList :: TX DB List
 createList = do
-    DB {..} <- getData
     listId <- unsafeIOToTX randomIO
-    liftSTM $ do
-        lists <- readTVar dbLists
-        check $ IntMap.notMember listId lists
     now <- unsafeIOToTX getCurrentTime
     let list = List { listItems = IntMap.empty
                     , listCreatedAt = now
@@ -91,8 +89,11 @@ _createList :: List -> TX DB ()
 _createList list = do
     DB {..} <- getData
     liftSTM $ do
+        lists <- readTVar dbLists
         listVar <- newTVar list
-        modifyTVar' dbLists $ IntMap.insert (listId list) listVar
+        check $ IntMap.notMember (fromIntegral $ listId list) lists
+        let lists' = IntMap.insert (fromIntegral $ listId list) listVar lists
+        writeTVar dbLists lists'
     record (CreateList list)
 
 getList :: ListId -> TX DB List
@@ -102,7 +103,7 @@ getListVar :: ListId -> TX DB (TVar List)
 getListVar listId = do
     DB {..} <- getData
     lists <- liftSTM $ readTVar dbLists
-    case IntMap.lookup listId lists of
+    case IntMap.lookup (fromIntegral listId) lists of
         Just listVar -> return listVar
         Nothing -> throwTX $ ListNotFound listId
 
@@ -110,8 +111,9 @@ deleteList :: ListId -> TX DB ()
 deleteList listId = do
     DB {..} <- getData
     lists <- liftSTM $ readTVar dbLists
-    when (IntMap.notMember listId lists) (throwTX $ ListNotFound listId)
-    let lists' = IntMap.delete listId lists
+    when (IntMap.notMember (fromIntegral listId) lists)
+         (throwTX $ ListNotFound listId)
+    let lists' = IntMap.delete (fromIntegral listId) lists
     liftSTM $ writeTVar dbLists lists'
     record (DeleteList listId)
 
@@ -129,10 +131,11 @@ createItem itemText listId = do
 _createItem :: Item -> ListId -> TX DB ()
 _createItem item listId = do
     listVar <- getListVar listId
-    list <- liftSTM $ readTVar listVar
     liftSTM $ do
-        check $ IntMap.notMember (itemId item) (listItems list)
-        let items' = IntMap.insert (itemId item) item (listItems list)
+        list <- readTVar listVar
+        let items = listItems list
+        check $ IntMap.notMember (fromIntegral $ itemId item) items
+        let items' = IntMap.insert (fromIntegral $ itemId item) item items
             list' = list { listItems = items'
                          , listUpdatedAt = itemUpdatedAt item }
         writeTVar listVar list'
@@ -142,14 +145,15 @@ updateItem :: Maybe Text -> Maybe Bool -> ItemId -> ListId -> TX DB Item
 updateItem itemText' itemDone' itemId listId = do
     listVar <- getListVar listId
     list <- liftSTM $ readTVar listVar
-    case IntMap.lookup itemId (listItems list) of
+    let items = listItems list
+    case IntMap.lookup (fromIntegral itemId) items of
         Nothing -> throwTX $ ItemNotFound itemId listId
         Just item -> do
             now <- unsafeIOToTX getCurrentTime
             let item' = item { itemText = fromMaybe (itemText item) itemText'
                              , itemDone = fromMaybe (itemDone item) itemDone'
                              , itemUpdatedAt = now }
-                items' = IntMap.insert itemId item' (listItems list)
+                items' = IntMap.insert (fromIntegral itemId) item' items
                 list' = list { listItems = items'
                              , listUpdatedAt = now }
             liftSTM $ writeTVar listVar list'
@@ -160,10 +164,10 @@ deleteItem :: ItemId -> ListId -> TX DB ()
 deleteItem itemId listId = do
     listVar <- getListVar listId
     list <- liftSTM $ readTVar listVar
-    when (IntMap.notMember itemId (listItems list))
+    when (IntMap.notMember (fromIntegral itemId) (listItems list))
          (throwTX $ ItemNotFound itemId listId)
     now <- unsafeIOToTX getCurrentTime
-    let items' = IntMap.delete itemId (listItems list)
+    let items' = IntMap.delete (fromIntegral itemId) (listItems list)
         list' = list { listItems = items'
                      , listUpdatedAt = now }
     liftSTM $ writeTVar listVar list'
@@ -189,5 +193,6 @@ instance SafeCopy (Update DB) where
             _ -> fail $ "unknown tag \"" ++ show tag ++ "\""
 
 
+deriveSafeCopy 0 'base ''ID
 deriveSafeCopy 0 'base ''List
 deriveSafeCopy 0 'base ''Item

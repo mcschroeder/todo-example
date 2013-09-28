@@ -76,6 +76,9 @@ main = do
 
 ------------------------------------------------------------------------------
 
+instance ToJSON (ID a) where toJSON = A.toJSON . unID
+instance FromText (ID a) where fromText = fmap ID . fromText
+
 instance ToJSON Item where
     toJSON o = A.object [ "item_id" .= itemId o
                         , "text" .= itemText o
