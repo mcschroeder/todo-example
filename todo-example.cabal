@@ -7,8 +7,8 @@ version:             0.1.0.0
 -- description:         
 license:             MIT
 license-file:        LICENSE
-author:              Michael Schröder
-maintainer:          mc.schroeder@gmail.com
+author:              Michael Schröder, Jürgen Cito
+maintainer:          mc.schroeder@gmail.com, citostyle@mgail.com
 -- copyright:           
 -- category:            
 build-type:          Simple

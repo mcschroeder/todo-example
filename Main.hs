@@ -74,9 +74,12 @@ main = do
                         ItemNotFound _ _ -> halt $ status notFound404
             status noContent204
 
+        get "/" $ do
+            file "index.html"
+
 ------------------------------------------------------------------------------
 
-instance ToJSON (ID a) where toJSON = A.toJSON . unID
+instance ToJSON (ID a) where toJSON = A.toJSON . show . unID
 instance FromText (ID a) where fromText = fmap ID . fromText
 
 instance ToJSON Item where
