@@ -79,6 +79,9 @@ main = do
         get "/" $ do
             file "index.html"
 
+        get "/haskell-todo.js" $ do
+            file "haskell-todo.js"
+
 ------------------------------------------------------------------------------
 
 instance ToJSON (ID a) where toJSON = A.toJSON . show . unID

@@ -4,173 +4,24 @@
       <title>haskell todo example</title>
       
       <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-      <script type="text/javascript">
-      	$(document).ready(function($) {
-            //set current id from hash
-            if(window.location.hash) {
-               HaskellTodo.setCurrentListId(window.location.hash.substring(1));
-               HaskellTodo.items.get();
-            }
-
-            $('#create-new-list').on('click', function() {
-                HaskellTodo.list.create();
-                return false;
-            });
-
-            $('#destroy-list').on('click', function() {
-                HaskellTodo.list.destroy();
-                return false;
-            });
-
-            $('form#todo').submit(function() {
-                if ($('input').val() !== '') {
-                    var item_text = $('input').val();
-
-                    HaskellTodo.items.add(item_text);
-                };
-                $('input').val('');
-                return false;
-            });
-
-            $(document).on('click', 'a.delete-todo', function (e) {
-                HaskellTodo.items.delete($(this).parent().data('itemId'));
-                e.preventDefault();
-                $(this).parent().remove();
-            });            
-      	});                 
-      	
-        var HaskellTodo = {
-            items : {
-              _list_id : null, 
-
-              setListId : function(list_id) {
-                this._list_id = list_id;
-              },
-
-              getListId : function() {
-                return this._list_id;
-              },
-
-              add : function(item_text) {
-                $.ajax({
-                  url : this._prefixListUrl('items'),
-                  dataType : "json",
-                  type : "POST",
-                  data : JSON.stringify({'text' : item_text})
-                }).done(
-                  function(e) {
-                    //add item to DOM                 
-                    HaskellTodo.items.addToDom(e);
-                  }
-                );
-              },
-
-              delete : function(item_id) {
-                $.ajax({
-                  url : this._prefixListUrl('items/' + item_id),
-                  dataType : "json",
-                  type : "DELETE",
-                  data : ''
-                });                
-              },
-
-              addToDom : function(item) {
-                $('ul#todo-list').append('<li data-item-id="' + item.item_id + '">' + item.text + ' <a class="delete-todo" href="javascript: void();">x</a></li>');  
-              },
-
-              addAll : function(items) {
-                $('ul#todo-list').empty();
-                for(var i=0; i < items.length; i++) {
-                  this.addToDom(items[i]);
-                }
-              },
-
-              get : function() {
-                if(!this._list_id) { return; }
-                $.ajax({
-                   url : this._prefixListUrl(),
-                   dataType: "json",
-                   data: ''
-                 }).done(
-                    function(e) {
-                      HaskellTodo.items.addAll(e.items);
-                    }
-                 );
-                 return false;
-              },
-
-              _prefixListUrl : function(path) {
-                var url = '/lists/' + this._list_id;
-                if(path) {
-                  url += '/' + path;
-                }
-                return url;
-              }  
-            },
-            
-            getHostUrl : function() {
-              return 'http://' + window.location.hostname + ':' + window.location.port;
-            },
-
-            setCurrentListId : function(list_id) {
-              this.items.setListId(list_id);
-              var url = HaskellTodo.getHostUrl() + '/#' + list_id;    
-              $('#invite-url span').html('<a href="' + url  + '">' + url + '</a>');
-              $('#invite-url').show();
-              $('#create-todo').show();
-            },
-
-            list : {
-              create : function() {
-
-                $.ajax({
-                  url : '/lists',
-                  type : 'POST',
-                  dataType : "json",
-                  data : ''
-                }).done(
-                  function(e) {
-                    HaskellTodo.setCurrentListId(e.list_id);
-                    HaskellTodo.items.get();
-                  }
-                );
-              },
-
-              destroy : function() {
-
-                $.ajax({
-                  url : '/lists/' + HaskellTodo.items.getListId(),
-                  type : 'DELETE',
-                  dataType : "json",
-                  data : ''
-                }).done(
-                  function(e) {
-                    location.href = HaskellTodo.getHostUrl();
-                  }
-                );
-              },
-
-            }        
-      	};
-
-         setInterval(function() {
-            HaskellTodo.items.get();
-         }, 2000);
-      </script>
+      <script src="http://www.appelsiini.net/download/jquery.jeditable.mini.js"></script>
+      <script type="text/javascript" src="haskell-todo.js"></script>
 
       <style type="text/css">
-        #invite-url { display: none; }
+        #invite-url { display: none; margin-top: 1em; margin-bottom: 1em; }
         #create-todo { display: none; }
+        ul#todo-list { list-style-type: none; margin-left: 0px;}
+        #main { min-width: 400px; width: 50%;} 
+        h1 { padding-left: 0px; margin-left: 0px;}
       </style>
       <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet" />
    </head>
    <body>
-      <div class="container">
-        <div class="page-header">
-          <h1>haskell todo example</h1>
-        </div>
+      <div class="container" id="main">
+        <h1>haskell todo example</h1>
+        <hr />
 
-        <div class="row">
+        <div>
             <a class="btn" id="create-new-list" href="/lists/">Create new list</a>
             <div id="invite-url">
               Invite-URL:
@@ -179,18 +30,15 @@
             </div>
         </div>
 
-        <div class="row">
+        <div>
           <div id="create-todo" class="well">
               <form id="todo">
-                <input id="todo-text" placeholder="What needs to be done?" type="text" class="span8" />
+                <input id="todo-text" placeholder="What needs to be done?" type="text" />
               </form>
-          </div>
-        </div>
-        
-        <div class="row">
-            <ul id="todo-list">
+              <ul id="todo-list">
               
             </ul>
+          </div>
         </div>
 
       </div>
