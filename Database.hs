@@ -27,7 +27,9 @@ import TX
 ------------------------------------------------------------------------------
 
 newtype ID a = ID { unID :: Word64 }
-    deriving (Bounded, Enum, Eq, Integral, Num, Ord, Real, Show, Random)
+    deriving (Bounded, Enum, Eq, Integral, Num, Ord, Real, Random)
+
+instance Show (ID a) where show = show . unID
 
 type ListId = ID List
 data List = List { listId :: ListId
