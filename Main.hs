@@ -9,7 +9,9 @@ import Data.Aeson (ToJSON, (.=))
 import qualified Data.Aeson as A
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C
+import Data.Function
 import qualified Data.IntMap.Strict as IntMap
+import Data.List (sortBy)
 import Data.Monoid
 import Network.HTTP.Types
 import Web.Welshy
@@ -93,7 +95,10 @@ instance ToJSON List where
     toJSON o = A.object [ "list_id" .= listId o
                         , "created_at" .= listCreatedAt o
                         , "updated_at" .= listUpdatedAt o
-                        , "items" .= IntMap.elems (listItems o) ]
+                        , "items" .= sortedItems ]
+        where
+            sortedItems = sortBy (compare `on` itemCreatedAt)
+                        $ IntMap.elems (listItems o)
 
 listLocation :: ListId -> ByteString
 listLocation listId = mconcat [ "/lists/", C.pack (show listId) ]
