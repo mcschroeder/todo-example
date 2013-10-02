@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -32,18 +33,18 @@ newtype ID a = ID { unID :: Word64 }
 instance Show (ID a) where show = show . unID
 
 type ListId = ID List
-data List = List { listId :: ListId
+data List = List { listId :: !ListId
                  , listItems :: IntMap Item
-                 , listCreatedAt :: UTCTime
-                 , listUpdatedAt :: UTCTime
+                 , listCreatedAt :: !UTCTime
+                 , listUpdatedAt :: !UTCTime
                  }
 
 type ItemId = ID Item
-data Item = Item { itemId :: ItemId
-                 , itemText :: Text
-                 , itemDone :: Bool
-                 , itemCreatedAt :: UTCTime
-                 , itemUpdatedAt :: UTCTime
+data Item = Item { itemId :: !ItemId
+                 , itemText :: !Text
+                 , itemDone :: !Bool
+                 , itemCreatedAt :: !UTCTime
+                 , itemUpdatedAt :: !UTCTime
                  }
 
 data DB = DB { dbLists :: TVar (IntMap (TVar List)) }
