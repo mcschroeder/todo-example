@@ -4,6 +4,8 @@
 
 module Main where
 
+import Control.Applicative
+import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Data.Aeson (ToJSON, (.=))
 import qualified Data.Aeson as A
@@ -13,7 +15,11 @@ import Data.Function
 import qualified Data.IntMap.Strict as IntMap
 import Data.List (sortBy)
 import Data.Monoid
+import qualified Data.Text as T
+import Data.Time
 import Network.HTTP.Types
+import System.Locale (defaultTimeLocale)
+import System.Timeout
 import Web.Welshy
 import TX
 
@@ -31,6 +37,21 @@ main = do
             list <- liftIO $ persistently db createList
             header hLocation $ listLocation (listId list)
             json list
+
+        get "/lists/:list_id" $ do
+            listId <- capture "list_id"
+            now <- queryParam "when_updated_after" <|> pass
+            list <- timeout (30 * 10^6)  -- 30 seconds
+                            (persistently db $ do
+                                list <- getList listId
+                                liftSTM $ check $ now < listUpdatedAt list
+                                return list
+                            )
+                    `catchIO` \case
+                        ListNotFound _ -> halt $ status notFound404
+            case list of
+                Just l  -> json l
+                Nothing -> status $ mkStatus 522 "Connection timed out"
 
         get "/lists/:list_id" $ do
             listId <- capture "list_id"
@@ -83,6 +104,14 @@ main = do
             file "haskell-todo.js"
 
 ------------------------------------------------------------------------------
+
+-- TODO: move into welshy
+-- | Parses standard ISO-8601 dates (e.g. @2013-09-29T10:40Z@).
+instance FromText UTCTime where
+    fromText = maybe (Left "FromText UTCTime: no parse") Right
+             . parseTime defaultTimeLocale "%FT%T%QZ"
+             . T.unpack
+
 
 instance ToJSON (ID a) where toJSON = A.toJSON . show . unID
 instance FromText (ID a) where fromText = fmap ID . fromText

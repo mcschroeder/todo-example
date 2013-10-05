@@ -30,6 +30,11 @@
 
     GET /lists/:list_id
 
+### Parameters
+
+when_updated_after
+:   *Optional* **UTC string** - Initiates a long polling connection. The server waits with the response until the requested list has a `updated_at` time after the one given.
+
 ### Response
 
     Status: 200 OK
