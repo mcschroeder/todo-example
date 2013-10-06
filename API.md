@@ -22,7 +22,8 @@
         "list_id": 2803027034499563436,
         "items": [],
         "created_at": "2013-09-23T14:07:20.758Z",
-        "updated_at": "2013-09-23T14:07:20.758Z"
+        "updated_at": "2013-09-23T14:07:20.758Z",
+        "version": 1
     }
 
 
@@ -32,8 +33,8 @@
 
 ### Parameters
 
-when_updated_after
-:   *Optional* **UTC string** - Initiates a long polling connection. The server waits with the response until the requested list has a `updated_at` time after the one given.
+when_none_match
+:   *Optional* **version number** - Initiates a long polling connection. The server waits with the response until the requested list has a version number different from the one given.
 
 ### Response
 
@@ -58,7 +59,8 @@ when_updated_after
             }
         ],
         "created_at": "2013-09-23T14:07:20.758Z",
-        "updated_at": "2013-09-23T16:45:12.126Z"
+        "updated_at": "2013-09-23T16:45:12.126Z",
+        "version": 3
     }
 
 

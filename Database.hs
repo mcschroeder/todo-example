@@ -37,6 +37,7 @@ data List = List { listId :: !ListId
                  , listItems :: IntMap Item
                  , listCreatedAt :: !UTCTime
                  , listUpdatedAt :: !UTCTime
+                 , listVersion :: !Word64
                  }
 
 type ItemId = ID Item
@@ -84,6 +85,7 @@ createList = do
     let list = List { listItems = IntMap.empty
                     , listCreatedAt = now
                     , listUpdatedAt = now
+                    , listVersion = 1
                     , .. }
     _createList list
     return list
@@ -140,7 +142,8 @@ _createItem item listId = do
         check $ IntMap.notMember (fromIntegral $ itemId item) items
         let items' = IntMap.insert (fromIntegral $ itemId item) item items
             list' = list { listItems = items'
-                         , listUpdatedAt = itemUpdatedAt item }
+                         , listUpdatedAt = itemUpdatedAt item
+                         , listVersion = succ $ listVersion list }
         writeTVar listVar list'
     record (CreateItem item listId)
 
@@ -158,7 +161,8 @@ updateItem itemText' itemDone' itemId listId = do
                              , itemUpdatedAt = now }
                 items' = IntMap.insert (fromIntegral itemId) item' items
                 list' = list { listItems = items'
-                             , listUpdatedAt = now }
+                             , listUpdatedAt = now
+                             , listVersion = succ $ listVersion list }
             liftSTM $ writeTVar listVar list'
             record (UpdateItem itemText' itemDone' itemId listId)
             return item
@@ -172,7 +176,8 @@ deleteItem itemId listId = do
     now <- unsafeIOToTX getCurrentTime
     let items' = IntMap.delete (fromIntegral itemId) (listItems list)
         list' = list { listItems = items'
-                     , listUpdatedAt = now }
+                     , listUpdatedAt = now
+                     , listVersion = succ $ listVersion list }
     liftSTM $ writeTVar listVar list'
     record (DeleteItem itemId listId)
 

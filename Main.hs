@@ -40,11 +40,11 @@ main = do
 
         get "/lists/:list_id" $ do
             listId <- capture "list_id"
-            now <- queryParam "when_updated_after" <|> pass
+            knownVersion <- queryParam "when_none_match" <|> return 0
             list <- timeout (30 * 10^6)  -- 30 seconds
                             (persistently db $ do
                                 list <- getList listId
-                                liftSTM $ check $ now < listUpdatedAt list
+                                liftSTM $ check $ knownVersion /= listVersion list
                                 return list
                             )
                     `catchIO` \case
@@ -52,13 +52,6 @@ main = do
             case list of
                 Just l  -> json l
                 Nothing -> status $ mkStatus 522 "Connection timed out"
-
-        get "/lists/:list_id" $ do
-            listId <- capture "list_id"
-            list <- persistently db (getList listId)
-                    `catchIO` \case
-                        ListNotFound _ -> halt $ status notFound404
-            json list
 
         delete "/lists/:list_id" $ do
             listId <- capture "list_id"
@@ -106,7 +99,7 @@ main = do
 ------------------------------------------------------------------------------
 
 -- TODO: move into welshy
--- | Parses standard ISO-8601 dates (e.g. @2013-09-29T10:40Z@).
+-- | Parses standard ISO-8601 dates (e.g. @2013-09-29T10:40:30.123Z@).
 instance FromText UTCTime where
     fromText = maybe (Left "FromText UTCTime: no parse") Right
              . parseTime defaultTimeLocale "%FT%T%QZ"
@@ -127,6 +120,7 @@ instance ToJSON List where
     toJSON o = A.object [ "list_id" .= listId o
                         , "created_at" .= listCreatedAt o
                         , "updated_at" .= listUpdatedAt o
+                        , "version" .= listVersion o
                         , "items" .= sortedItems ]
         where
             sortedItems = sortBy (compare `on` itemCreatedAt)
