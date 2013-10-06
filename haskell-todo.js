@@ -44,6 +44,7 @@ function makeEditable() {
 var HaskellTodo = {
     items : {
       _list_id : null, 
+      _list_version : 0,
 
       setListId : function(list_id) {
         this._list_id = list_id;
@@ -51,6 +52,10 @@ var HaskellTodo = {
 
       getListId : function() {
         return this._list_id;
+      },
+
+      setListVersion : function(list_version) {
+        this._list_version = list_version;
       },
 
       add : function(item_text) {
@@ -101,17 +106,19 @@ var HaskellTodo = {
         }
       },
 
-      get : function() {
+      get : function() {        
         if(!this._list_id) { return; }
         $.ajax({
            url : this._prefixListUrl(),
            dataType: "json",
-           data: ''
-         }).done(
-            function(e) {
-              HaskellTodo.items.addAll(e.items);
-            }
-         );
+           data: "when_none_match=" + this._list_version,
+           success: function(e) {
+             HaskellTodo.items.setListVersion(e.version);
+             HaskellTodo.items.addAll(e.items);
+           },
+           complete: function() { HaskellTodo.items.get(); },
+           timeout: 30000
+         });
          return false;
       },
 
@@ -169,6 +176,4 @@ var HaskellTodo = {
     }        
 };
 
- setInterval(function() {
-    HaskellTodo.items.get();
- }, 6000);
+HaskellTodo.items.get();
